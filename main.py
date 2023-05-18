@@ -44,7 +44,7 @@ def process_url(organic):
     except Exception as e:
         console = Console()
         error_message = f"Error processing URL {organic.get('link')}: {str(e)}"
-        console.print(Text(error_message, style="bold red"))
+        console.print(f"\n[bold red]{error_message}[/]")
 
     finally:
         if driver is not None:
