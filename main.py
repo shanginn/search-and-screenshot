@@ -1,4 +1,4 @@
-import sys
+
 import urllib3
 import requests
 from serpapi import GoogleSearch
@@ -12,9 +12,8 @@ from dotenv import load_dotenv
 import os
 from urllib.parse import urlparse
 import argparse
-from rich.progress import Progress, TaskID
+from rich.progress import Progress
 from rich.console import Console
-from rich.text import Text
 
 load_dotenv()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
