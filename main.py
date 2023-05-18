@@ -1,11 +1,7 @@
 import sys
-
 import urllib3
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-from serpapi import GoogleSearch
 import requests
+from serpapi import GoogleSearch
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -17,6 +13,8 @@ import os
 from urllib.parse import urlparse
 import argparse
 from rich.progress import Progress, TaskID
+from rich.console import Console
+from rich.text import Text
 
 load_dotenv()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -44,7 +42,10 @@ def process_url(organic):
         driver.save_screenshot(f"screenshots/screenshot_{hostname}.png")
 
     except Exception as e:
-        print(f"Error processing URL {organic.get('link')}: {str(e)}")
+        console = Console()
+        error_message = f"Error processing URL {organic.get('link')}: {str(e)}"
+        console.print(Text(error_message, style="bold red"))
+
     finally:
         if driver is not None:
             driver.quit()
@@ -66,9 +67,11 @@ def search_and_screenshot(search_phrase, limit):
         result = search.get_dict()
         organics = result.get('organic_results', [])
 
-        print(f"Found {len(organics)} organic results for {search_phrase} (Page {page}): ")
+        console = Console()
+        console.print(f"Found {len(organics)} organic results for {search_phrase} (Page {page}): ")
+
         for organic in organics:
-            print(f"{organic.get('position')}. {organic.get('link')}")
+            console.print(f"{organic.get('position')}. {organic.get('link')}")
 
         if not os.path.exists('screenshots'):
             os.makedirs('screenshots')
