@@ -33,7 +33,7 @@ def process_url(organic):
         hostname = str(parsed.hostname)
         base_url = parsed.scheme + "://" + hostname
 
-        response = requests.get(url, verify=False)
+        response = requests.get(url, verify=False, timeout=20)  # Set timeout to 20 seconds
         text = response.text
 
         driver.get(base_url)
@@ -55,7 +55,6 @@ def search_and_screenshot(search_phrase, num_results):
     })
 
     result = search.get_dict()
-    print(len(result))
 
     organics = result.get('organic_results', [])
 
