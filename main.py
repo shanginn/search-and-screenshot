@@ -1,6 +1,7 @@
 import sys
 
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 from serpapi import GoogleSearch
@@ -86,7 +87,6 @@ def search_and_screenshot(search_phrase, limit):
 
         if not organics or total_processed >= limit:
             break
-
 
 
 if __name__ == '__main__':
