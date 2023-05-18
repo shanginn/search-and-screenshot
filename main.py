@@ -1,6 +1,8 @@
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 from serpapi import GoogleSearch
 import requests
-from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
@@ -13,7 +15,7 @@ from urllib.parse import urlparse
 import argparse
 
 load_dotenv()
-
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 def process_url(organic):
     driver = None
