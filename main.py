@@ -13,9 +13,11 @@ from dotenv import load_dotenv
 import os
 from urllib.parse import urlparse
 import argparse
+from rich.progress import Progress, TaskID
 
 load_dotenv()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 def process_url(organic):
     driver = None
@@ -64,13 +66,13 @@ def search_and_screenshot(search_phrase, num_results):
         links_file.seek(0)
         existing_links = links_file.read().splitlines()
 
-        for i, organic in enumerate(organics, start=1):
-            url = organic.get('link')
-            if url not in existing_links:
-                links_file.write(url + '\n')
+        with Progress() as progress:
+            task = progress.add_task("[cyan]Processing URLs...", total=len(organics))
+            with Pool() as p:
+                for _ in p.imap_unordered(process_url, organics, chunksize=1):
+                    progress.update(task, advance=1)
 
-        with Pool() as p:
-            p.map(process_url, organics)
+            progress.stop()
 
 
 if __name__ == '__main__':
