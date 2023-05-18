@@ -16,28 +16,31 @@ load_dotenv()
 
 
 def process_url(organic):
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    driver = None
+    try:
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
 
-    webdriver_service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=webdriver_service, options=chrome_options)
+        webdriver_service = Service(ChromeDriverManager().install())
+        driver = webdriver.Chrome(service=webdriver_service, options=chrome_options)
 
-    url = organic.get('link')
-    parsed = urlparse(url)
-    hostname = str(parsed.hostname)
-    base_url = parsed.scheme + "://" + hostname
+        url = organic.get('link')
+        parsed = urlparse(url)
+        hostname = str(parsed.hostname)
+        base_url = parsed.scheme + "://" + hostname
 
-    response = requests.get(url, verify=False)
-    soup = BeautifulSoup(response.content, 'html.parser')
+        response = requests.get(url, verify=False)
+        text = response.text
 
-    search_phrase = organic.get('title')
-
-    if search_phrase.lower() in soup.get_text().lower():
         driver.get(base_url)
         time.sleep(2)
         driver.save_screenshot(f"screenshots/screenshot_{hostname}.png")
 
-    driver.quit()
+    except Exception as e:
+        print(f"Error processing URL {organic.get('link')}: {str(e)}")
+    finally:
+        if driver is not None:
+            driver.quit()
 
 
 def search_and_screenshot(search_phrase, num_results):
@@ -68,15 +71,16 @@ def search_and_screenshot(search_phrase, num_results):
             p.map(process_url, organics)
 
 
-# Create an argument parser
-parser = argparse.ArgumentParser(description='Search and take screenshots')
+if __name__ == '__main__':
+    # Create an argument parser
+    parser = argparse.ArgumentParser(description='Search and take screenshots')
 
-# Add the command line arguments
-parser.add_argument('search_phrase', type=str, help='The phrase to search for')
-parser.add_argument('--num_results', type=int, default=5, help='The number of search results to process')
+    # Add the command line arguments
+    parser.add_argument('search_phrase', type=str, help='The phrase to search for')
+    parser.add_argument('--num_results', type=int, default=5, help='The number of search results to process')
 
-# Parse the arguments
-args = parser.parse_args()
+    # Parse the arguments
+    args = parser.parse_args()
 
-# Run the function with the command line arguments
-search_and_screenshot(args.search_phrase, args.num_results)
+    # Run the function with the command line arguments
+    search_and_screenshot(args.search_phrase, args.num_results)
