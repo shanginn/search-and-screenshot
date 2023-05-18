@@ -1,3 +1,5 @@
+import sys
+
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
@@ -47,16 +49,19 @@ def process_url(organic):
             driver.quit()
 
 
-def search_and_screenshot(search_phrase, num_results):
+def search_and_screenshot(search_phrase, limit):
     search = GoogleSearch({
         "q": search_phrase,
-        "num": num_results,
-        "api_key": os.getenv("SERP_API_KEY")
+        "api_key": os.getenv("SERP_API_KEY"),
+        "hl": "en",
+        "filter": "0"
     })
 
     result = search.get_dict()
+    print('Total results: ', result['search_information']['total_results'])
 
     organics = result.get('organic_results', [])
+    print(f"Found {len(organics)} organic results for {search_phrase}")
 
     if not os.path.exists('screenshots'):
         os.makedirs('screenshots')
@@ -80,10 +85,10 @@ if __name__ == '__main__':
 
     # Add the command line arguments
     parser.add_argument('search_phrase', type=str, help='The phrase to search for')
-    parser.add_argument('--num_results', type=int, default=5, help='The number of search results to process')
+    parser.add_argument('--limit', type=int, default=5, help='The number of search results to process')
 
     # Parse the arguments
     args = parser.parse_args()
 
     # Run the function with the command line arguments
-    search_and_screenshot(args.search_phrase, args.num_results)
+    search_and_screenshot(args.search_phrase, args.limit)
