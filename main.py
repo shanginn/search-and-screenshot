@@ -50,33 +50,43 @@ def process_url(organic):
 
 
 def search_and_screenshot(search_phrase, limit):
-    search = GoogleSearch({
-        "q": search_phrase,
-        "api_key": os.getenv("SERP_API_KEY"),
-        "hl": "en",
-        "filter": "0"
-    })
+    total_processed = 0  # Variable to keep track of the total processed results
+    page = 1  # Start with page 1
 
-    result = search.get_dict()
-    print('Total results: ', result['search_information']['total_results'])
+    while total_processed < limit:
+        search = GoogleSearch({
+            "q": search_phrase,
+            "api_key": os.getenv("SERP_API_KEY"),
+            "hl": "en",
+            "start": (page - 1) * 10,  # Calculate the start index based on the page number
+            "filter": "0"
+        })
 
-    organics = result.get('organic_results', [])
-    print(f"Found {len(organics)} organic results for {search_phrase}")
+        result = search.get_dict()
+        organics = result.get('organic_results', [])
+        print(f"Found {len(organics)} organic results for {search_phrase} (Page {page})")
 
-    if not os.path.exists('screenshots'):
-        os.makedirs('screenshots')
+        if not os.path.exists('screenshots'):
+            os.makedirs('screenshots')
 
-    with open("links.txt", "a+") as links_file:
-        links_file.seek(0)
-        existing_links = links_file.read().splitlines()
+        with open("links.txt", "a+") as links_file:
+            links_file.seek(0)
+            existing_links = links_file.read().splitlines()
 
-        with Progress() as progress:
-            task = progress.add_task("[cyan]Processing URLs...", total=len(organics))
-            with Pool() as p:
-                for _ in p.imap_unordered(process_url, organics, chunksize=1):
-                    progress.update(task, advance=1)
+            with Progress() as progress:
+                task = progress.add_task("[cyan]Processing URLs...", total=min(len(organics), limit - total_processed))
+                with Pool() as p:
+                    for _ in p.imap_unordered(process_url, organics, chunksize=1):
+                        progress.update(task, advance=1)
+                        total_processed += 1
 
-            progress.stop()
+                progress.stop()
+
+        page += 1  # Move to the next page
+
+        if not organics or total_processed >= limit:
+            break
+
 
 
 if __name__ == '__main__':
