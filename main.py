@@ -65,7 +65,10 @@ def search_and_screenshot(search_phrase, limit):
 
         result = search.get_dict()
         organics = result.get('organic_results', [])
-        print(f"Found {len(organics)} organic results for {search_phrase} (Page {page})")
+
+        print(f"Found {len(organics)} organic results for {search_phrase} (Page {page}): ")
+        for organic in organics:
+            print(f"{organic.get('position')}. {organic.get('link')}")
 
         if not os.path.exists('screenshots'):
             os.makedirs('screenshots')
@@ -73,15 +76,19 @@ def search_and_screenshot(search_phrase, limit):
         with open("links.txt", "a+") as links_file:
             links_file.seek(0)
             existing_links = links_file.read().splitlines()
+            for organic in organics:
+                link = organic.get('link')
+                if link not in existing_links:
+                    links_file.write(f"{link}\n")
 
-            with Progress() as progress:
-                task = progress.add_task("[cyan]Processing URLs...", total=min(len(organics), limit - total_processed))
-                with Pool() as p:
-                    for _ in p.imap_unordered(process_url, organics, chunksize=1):
-                        progress.update(task, advance=1)
-                        total_processed += 1
+        with Progress() as progress:
+            task = progress.add_task("[cyan]Processing URLs...", total=min(len(organics), limit - total_processed))
+            with Pool() as p:
+                for _ in p.imap_unordered(process_url, organics, chunksize=1):
+                    progress.update(task, advance=1)
+                    total_processed += 1
 
-                progress.stop()
+            progress.stop()
 
         page += 1  # Move to the next page
 
