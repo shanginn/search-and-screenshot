@@ -1,11 +1,12 @@
+import functools
 
 import urllib3
 import requests
 from serpapi import GoogleSearch
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 from multiprocessing import Pool
 import time
 from dotenv import load_dotenv
@@ -14,19 +15,19 @@ from urllib.parse import urlparse
 import argparse
 from rich.progress import Progress
 from rich.console import Console
+from pathvalidate import sanitize_filename
 
 load_dotenv()
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def process_url(organic):
+def process_url(organic, screenshot_folder):
     driver = None
     try:
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
+        options = webdriver.FirefoxOptions()
+        options.add_argument("--headless")
 
-        webdriver_service = Service(ChromeDriverManager().install())
-        driver = webdriver.Chrome(service=webdriver_service, options=chrome_options)
+        driver = webdriver.Firefox(options=options)
 
         url = organic.get('link')
         parsed = urlparse(url)
@@ -38,7 +39,7 @@ def process_url(organic):
 
         driver.get(base_url)
         time.sleep(2)
-        driver.save_screenshot(f"screenshots/screenshot_{hostname}.png")
+        driver.save_screenshot(f"{screenshot_folder}/screenshot_{hostname}.png")
 
     except Exception as e:
         console = Console()
@@ -53,6 +54,11 @@ def process_url(organic):
 def search_and_screenshot(search_phrase, limit):
     total_processed = 0  # Variable to keep track of the total processed results
     page = 1  # Start with page 1
+    safe_phrase = sanitize_filename(search_phrase)[:200]
+    datetime = time.strftime("%Y-%m-%d-%H%M%S")
+    output_dir = f'output/{safe_phrase}/{datetime}'
+    links_filename = f'{output_dir}/links.txt'
+    screenshot_folder = f'{output_dir}/screenshots'
 
     while total_processed < limit:
         search = GoogleSearch({
@@ -72,10 +78,10 @@ def search_and_screenshot(search_phrase, limit):
         for organic in organics:
             console.print(f"{organic.get('position')}. {organic.get('link')}")
 
-        if not os.path.exists('screenshots'):
-            os.makedirs('screenshots')
+        if not os.path.exists(screenshot_folder):
+            os.makedirs(screenshot_folder)
 
-        with open("links.txt", "a+") as links_file:
+        with open(links_filename, "a+") as links_file:
             links_file.seek(0)
             existing_links = links_file.read().splitlines()
             for organic in organics:
@@ -86,7 +92,8 @@ def search_and_screenshot(search_phrase, limit):
         with Progress() as progress:
             task = progress.add_task("[cyan]Processing URLs...", total=min(len(organics), limit - total_processed))
             with Pool() as p:
-                for _ in p.imap_unordered(process_url, organics, chunksize=1):
+                process_url_partial = functools.partial(process_url, screenshot_folder=screenshot_folder)
+                for _ in p.imap_unordered(process_url_partial, organics, chunksize=1):
                     progress.update(task, advance=1)
                     total_processed += 1
 
